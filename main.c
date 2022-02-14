@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "scatter_gather.h"
 
@@ -9,27 +10,48 @@
 void chartest() {
 
     char *init_ = "01234567890123456789";
-    char *common;
     //char init_[ARRAY_SIZE];
     int segments = 5;
     char * proc_;
-    int segment_no = scatter((void**)&common, init_, segments, (void**)&proc_, strlen(init_));
+    int segment_no = scatter(init_, segments, (void**)&proc_, strlen(init_));
 
     if (segment_no == -1) {
         printf("Error during scatter.\n");
         return;
     }
+    char * proc2;
+    int ret2 = scatter(proc_, 2, (void**)&proc2, 2);
+
+    printf("ret2 = %d\n", ret2);
 
     proc_[0] = 'x';
     proc_[1] = 'y';
+    //proc2[0] = 'h';
+    //proc2[1] = 'a';
 
-    printf("proc_: %s of segment no %d\n", proc_, segment_no);
+    char * exit2;
+    printf("call gather for 2\n");
+    gather((void**)&exit2);
 
-    __sync_synchronize();
 
-    int ret = gather((void**)&common, segments, segment_no, strlen(init_), (void**)&proc_);
 
-    printf("result: %s\n", common);
+    char * exit_;
+
+    printf("gather #2\n");
+
+    //printf("proc_: %s of segment no %d\n", proc_, segment_no);
+
+    //__sync_synchronize();
+
+    int ret = gather((void**)&exit_);
+
+    printf("result: %s\n", exit_);
+    printf("result first: %s\n", exit2);
+
+
+    //char * exit2;
+    //int ret2 = gather((void**)&exit2);
+    free(exit_);
 
 }
 
@@ -45,8 +67,8 @@ void inttest() {
     fill_int(init_, ARRAY_SIZE, 2);
     int segments = SEGMENTS;
     int * proc_;
-    void * common;
-    int segment_no = scatter(&common, init_, segments, (void**)&proc_, ARRAY_SIZE*sizeof(int));
+    int * exit_;
+    int segment_no = scatter(init_, segments, (void**)&proc_, ARRAY_SIZE*sizeof(int));
 
     if (segment_no == -1) {
         printf("Error during scatter.\n");
@@ -57,13 +79,15 @@ void inttest() {
     proc_[1] = 666;
     proc_[2] = 42;
 
-    int ret = gather(&common, segments, segment_no, ARRAY_SIZE*sizeof(int), (void**)&proc_);
+
+    int ret = gather((void**)&exit_);
 
     for (int i = 0; i < ARRAY_SIZE; i++) {
-        printf("%d\t", ((int*)common)[i]);
+        printf("%d\t", exit_[i]);
     }
 
     printf("\n");
+    free(exit_);
 
 }
 
