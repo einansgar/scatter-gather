@@ -1,0 +1,90 @@
+\documentclass[a4paper]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage[english]{babel}
+\usepackage{fancyhdr}
+\let\oldAuthor\author
+\renewcommand{\author}[1]{\newcommand{\myAuthor}{#1}\oldAuthor{#1}} 
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[nolist]{acronym}
+\setlist[description]{leftmargin=0.4cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\begin{document}
+
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{CStyle}{
+    backgroundcolor=\color{backgroundColour},   
+    commentstyle=\color{mGreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{mGray},
+    stringstyle=\color{mPurple},
+    basicstyle=\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C
+}
+\lstset{style=CStyle}
+
+%---------------------------------------------------------
+%Fill in:
+%1. Title of lab. 
+%2. Student names and corresponding Email addresses. If many separate 
+%---------------------------------------------------------
+\title{Operating Systems - Assignment 1}
+\author{Ansgar Lemke (ansgar.lemke@stud-mail.uni-wuerzburg.de)}
+\date{} %<-- LEAVE EMPTY! 
+\begin{titlepage}
+\maketitle 
+%---------------------------------------------------------
+%Fill in:
+%1. Course name
+%2. Supervisor name(s), if many separate them by comma.
+%---------------------------------------------------------
+\thispagestyle{fancy}
+\headheight 35pt 
+\lhead{\small Department of Computing Science \\ Ume\aa\ University}
+\rhead{\small\today}
+\cfoot{Operating Systems \\ Supervisor: Monowar Bhuyan (monowar@cs.umu.se),\\ Sourasekhar Banerjee (sourasb@cs.umu.se)}
+\begin{abstract}
+%	What was the aim of the experiment? 
+%	What was measured?
+%	Which techniques/methods were used? 
+%	What are the main results?
+\end{abstract}
+blub
+\end{titlepage}
+\pagestyle{fancy}
+\headheight 35pt 
+\rhead{\small\today}
+\lhead{\myAuthor}
+\cfoot{\thepage}
+
+blub.
+
+\bibliographystyle{plain}
+
+\begin{thebibliography}{99}
+	\bibitem{sched_plot_thickens} Corbet, Jonathan, Schedulers: The Plot Thickens, LWN.net, (April 2007, \href{https://lwn.net/Articles/230574/}{https://lwn.net/Articles/230574/}).
+	\bibitem{mp_sched} sched(7) Linux User's Manual, Edition 5.3, (February 2022).
+    \bibitem{async} oxnz: Linux Asynchronous I/O (October 13 2016, https://oxnz.github.io/2016/10/13/linux-aio/).
+    \bibitem{nocache} open(2) Linux User's Manual, Edition 5.13, (February 2022).
+    \bibitem{iosched} colin-king et al: IOSchedulers ubuntu wiki (September 2019, https://wiki.ubuntu.com/Kernel/Reference/IOSchedulers).
+\end{thebibliography}
+
+\end{document}

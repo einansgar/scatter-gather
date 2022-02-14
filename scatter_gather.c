@@ -149,9 +149,16 @@ void chartest() {
 
 }
 
+void fill_int(int *array, int len, int val) {
+    for (int i = 0; i < len; i++) {
+        array[i] = val;
+    }
+}
+
 void inttest() {
 
     int init_[ARRAY_SIZE];
+    fill_int(init_, ARRAY_SIZE, 2);
     int segments = SEGMENTS;
     int * proc_;
     int segment_no = scatter(init_, segments, (void**)&proc_, ARRAY_SIZE*sizeof(int));
