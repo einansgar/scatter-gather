@@ -27,9 +27,9 @@ void chartest() {
 
     __sync_synchronize();
 
-    char * collect = (char*)gather((void**)&common, segments, segment_no, strlen(init_), (void**)&proc_);
+    int ret = gather((void**)&common, segments, segment_no, strlen(init_), (void**)&proc_);
 
-    printf("result: %s\n", collect);
+    printf("result: %s\n", common);
 
 }
 
@@ -57,10 +57,10 @@ void inttest() {
     proc_[1] = 666;
     proc_[2] = 42;
 
-    int * collect = (int*)gather(&common, segments, segment_no, ARRAY_SIZE*sizeof(int), (void**)&proc_);
+    int ret = gather(&common, segments, segment_no, ARRAY_SIZE*sizeof(int), (void**)&proc_);
 
     for (int i = 0; i < ARRAY_SIZE; i++) {
-        printf("%d\t", collect[i]);
+        printf("%d\t", ((int*)common)[i]);
     }
 
     printf("\n");
@@ -69,9 +69,7 @@ void inttest() {
 
 
 int main() {
-    initsg();
 
-    
     chartest();
     printf("chartest ready\n");
     inttest();

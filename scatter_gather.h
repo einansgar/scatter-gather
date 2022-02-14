@@ -12,22 +12,8 @@
 #endif
 
 
-// internal use type to be able to save main variables in static memory
-typedef struct {
-    void **com;
-    void **proc;
-} _sg_t;
-
-static _sg_t _sgt;
-
-// initialize for scatter/gather. Must be called in main() before scatter/gather
-//    can be used.
-#ifndef initsg
-# define initsg()     void * com; void * proc; _sgt.com = &com; _sgt.proc = &proc;
-#endif // initsg
-
-
 /* scatter: create a set of processes to compute tasks in parallel
+ *  param common_data: where to put the shared data during parallel execution.
  *  param init_data: data to initialize the processes. Will be shared equally.
  *      init_data must have a constant length.
  *      init_data must have the length indicated in param length.
@@ -45,11 +31,14 @@ int scatter(void **common_data, const void *init_data, const int segments, void 
 
 /* gather: combine the processes to one single process.
  *  exit the child processes, exit the parent in case of any failure
+ *
+ *  param common_data: shared memory, use the same pointer as in scatter
  *  param segments: amount of processes that have been created in scatter
  *  param segment_no: process identifier returned from scatter
  *  param length: size of the common memory in bytes
- *  return: common memory  
+ *  param proc_data: private memory area of the current process
+ *  return: 0 if everything alright, else the number of unfinished processes 
  */
-const void* gather(void **common_data, int segments, int segment_no, const int length, void **proc_data);
+int gather(void **common_data, int segments, int segment_no, const int length, void **proc_data);
 
 #endif // SCATTER_GATHER_H

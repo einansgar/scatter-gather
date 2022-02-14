@@ -26,10 +26,8 @@ int scatter(void **common_data, const void *init_data, const int segments, void 
        int pid = fork();
         if (pid == 0) {
             // assign work to child process
-            // lock on
             memcpy(_proc_data, *common_data+i*(segment_size), segment_size);
             *proc_data = _proc_data;
-            // lock off
             return i;
         } else if (pid == -1) {
             return -1; // error during spawn fork
@@ -37,33 +35,34 @@ int scatter(void **common_data, const void *init_data, const int segments, void 
     }
 
     // assign work to parent process
-    // lock on
     memcpy(_proc_data, *common_data + (segments-1)*segment_size, segment_size);
     *proc_data = _proc_data;
-    // lock off
     return segments - 1;
 }
 
-const void* gather(void **common_data, int segments, int segment_no, const int length, void **proc_data) {
+int gather(void **common_data, int segments, int segment_no, const int length, void **proc_data) {
     int segment_size = length / segments;
     if (segment_no < segments - 1) {
-        // lock on
-        printf("child\n");
         memcpy(*common_data + segment_no * segment_size, *proc_data, 
                 segment_size);
-        // lock off
-        printf("child ready %d\n", segment_no);
+        // printf("child ready %d\n", getpid());
         exit(0); // end the child's existence
     } else {
         // wait for all childs to exit
-        int returnStatus; 
-        waitpid(-1, &returnStatus, 0); 
-        if (returnStatus == -1) {
-            exit(0); // something failed at wait.
-        }  
 
+        int outstanding = segments-1;
+        int status;
+        int child;
+
+        while ((child=waitpid(-1, &status, 0)) > 0) {
+            // printf(" %d finished\n", child);
+            outstanding--;
+        }
+        if (outstanding != 0) {
+            printf("Couldn't collect all childs/too many. Left: %d\n", outstanding);
+        }
         memcpy(*common_data + (segments-1)*segment_size, *proc_data, 
                 segment_size);
-        return *common_data;
+        return outstanding;
     }
 }
