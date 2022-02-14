@@ -11,13 +11,17 @@ CXXFLAGS ?= -g -pthread -Wall -O2
 
 #all: task1 run_t1 figs1 doc 
 #all: task2 run_t2 run_t3 figs2 figs3 #doc
-all: scatter_gather run doc
+all: main run doc
 
-scatter_gather.cpp: 
-	$(CC) $(CFLAGS) -o $@ $<
+main: main.c scatter_gather.o
+	$(CC) $(CFLAGS) scatter_gather.o main.c -o main
 
-run: scatter_gather
-	./scatter_gather
+scatter_gather.o: scatter_gather.c scatter_gather.h
+	$(CC) -c scatter_gather.c
+
+
+run: main
+	./main
 
 #figs1:
 #	python3 ./plot1.py
