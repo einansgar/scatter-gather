@@ -46,8 +46,8 @@
 %1. Title of lab. 
 %2. Student names and corresponding Email addresses. If many separate 
 %---------------------------------------------------------
-\title{Operating Systems - Assignment 1}
-\author{Ansgar Lemke (ansgar.lemke@stud-mail.uni-wuerzburg.de)}
+\title{Operating Systems - Assignment 2}
+\author{Ansgar Lemke (ansgar.lemke@stud-mail.uni-wuerzburg.de, ens21ale)}
 \date{} %<-- LEAVE EMPTY! 
 \begin{titlepage}
 \maketitle 
@@ -63,11 +63,16 @@
 \cfoot{Operating Systems \\ Supervisor: Monowar Bhuyan (monowar@cs.umu.se),\\ Sourasekhar Banerjee (sourasb@cs.umu.se)}
 \begin{abstract}
 %	What was the aim of the experiment? 
+A simple scatter-gather functionality will be implemented using Linux processes only.
 %	What was measured?
+
 %	Which techniques/methods were used? 
+
 %	What are the main results?
+
+
 \end{abstract}
-blub
+
 \end{titlepage}
 \pagestyle{fancy}
 \headheight 35pt 
@@ -75,7 +80,64 @@ blub
 \lhead{\myAuthor}
 \cfoot{\thepage}
 
-blub.
+\section{Description}
+
+scatter-gather is an algorithm to split up a memory area so that multiple processes can work on the same computational problem and combine the results to one field of memory afterwards. MPI implements this functionality as MPI\_Scatter\_Gather, however, this solution aims to be as easy to use as possible. It's only dependencies are standard libraries.
+
+\subsection{Solution}
+
+The library is implemented in C99 which makes it available to many applications. With the used of shared memory but separated areas within for the different processes, questions of synchronization fall apart in most of the implementation. In the scattered phase, the processes work independent of each other and do not need any synchronization or communication which offers a good concurrent environment. 
+
+\subsection{Design Decisions}
+
+Each process is assigned to a segment which corresponds to a certain area of the shared memory. The highest segment is assigned to the parent process. This information can be used to exit all other processes in the end to continue on the parent only. 
+
+One goal is to provide an interface to the user which grants full functionality while being relatively safe by hiding parts that are not relevant for end users. There are two functions available to be used by the user:
+
+\begin{itemize}
+    \item {scatter takes the data where the processes should work on (init\_data), the number of processes (segments) to create, a pointer to the memory for each process (proc\_data) and the length of the whole data in bytes. It returns an identifier for each process (no pid) or -1 in case of error. \\
+    scatter creates an area of shared memory, copies init\_data into this area, forks, sets the proc\_data pointer of the child to a position inside this and returns. For the parent, the last segment of the memory will be used. }
+    \item {gather takes only one argument, a pointer where to write the combined work of the processes (exit\_data). If gather works fine, it returns 0, otherwise the number of processes that have not finished from what reason ever. For example, when gather is called a second time. \\
+    gather exits the child processes while letting the parent wait for all children to exit and then copies the shared data back into exit\_data followed by return.}
+\end{itemize}
+
+To transmit data from scatter to gather, internally a static struct is used. It contains the following values
+
+\begin{itemize}
+    \item com - the shared memory
+    \item segment - the identifier of the process
+    \item length - size of shared memory in bytes
+    \item segments - number of parallel processes
+    \item used - a state variable to prevent multiple scatter calls
+\end{itemize}
+
+The above mentioned pointer to the memory for each process points to a location inside the shared memory so some memcpy calls can be avoided. In the end of gather, the content of the shared memory is being copied back to exit\_data so that no shared memory exists after gather has finished. 
+
+\subsection{Assumptions}
+
+The spawned processes must only work on their own memory section, proc\_memory. They must not change the location of the pointer because then their changes will not be written back. They must strictly remain inside their memory area, otherwise they would write either on memory of another process or even to an invalid location outside the shared memory area.  
+
+init\_data must always be initialized while the other pointers should not, but may be as well (causing memory leaks).
+
+It is assumed that all processes take nearly the same amount of time, otherwise, the waiting might take up to the time the slowest process needs to finish plus the time to exit the others.
+
+
+\subsection{Limitations}
+
+The amount of available data types is restricted to the basic C types which do not contain any pointers to other memory locations and have a fixed size, e. g. int, char. Inclusion of pointers would introduce the problem that these need to be copied to the shared memory as well while it is not known how their structure looks like.
+
+The scatter-gather calls cannot be nested, if scatter is called, gather must follow exactly one time. This greatly simplifies the structure because a lot of the functionality can be hidden from the user. 
+
+Of course, there is a maximum size of memory that can be used in RAM.
+
+On multi-processor systems, the behavior of cache pages might reduce performance when data needs to be copied back again or adjacent memory areas might be synchronized as well out of the interpretation that most users might want to acces these as well. 
+
+\section{Examples}
+
+To demonstrate the functionality of scatter-gather, two computational problems will be executed with different amounts of processes. 
+
+\subsection{a}
+bla.
 
 \bibliographystyle{plain}
 

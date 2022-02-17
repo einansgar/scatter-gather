@@ -28,6 +28,10 @@ typedef struct {
 static _manage_sg _msg;
 
 int scatter(void *init_data, const int segments, void **proc_data, const int length) {
+    if (segments < 1) {
+        printf("Segments must be positive.\n");
+        return -1;
+    }
     if ((length/segments) * segments != length) {
         printf("Segments do not match length.\n");
     }
@@ -45,7 +49,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     _msg.segments = segments;
     _msg.length = length;
 
-    _msg.com = malloc(length);
+    _msg.com = realloc(_msg.com, length);
     // create an area of shared memory and write it to common_data
     int protection = PROT_READ | PROT_WRITE;
     int visibility = MAP_SHARED | MAP_ANONYMOUS;
@@ -93,7 +97,7 @@ int gather(void **exit_data) {
             return outstanding;
         }
         
-        *exit_data = malloc(_msg.length);
+        *exit_data = realloc(*exit_data, _msg.length);
         memcpy(*exit_data, _msg.com, _msg.length);
         munmap(_msg.com, _msg.length);
         _msg.used = 0;

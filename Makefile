@@ -4,7 +4,7 @@ RERUN := "(undefined references|Rerun to get (cross-references|the bars|point to
 RERUNBIB := "No file.*\.bbl|Citation.*undefined"
 
 CC ?= gcc
-CFLAGS ?= -g -Wall -O2
+CFLAGS ?= -g -Wall -O2 --std=c99
 CXX ?= c++
 CXXFLAGS ?= -g -pthread -Wall -O2
 
@@ -12,6 +12,9 @@ CXXFLAGS ?= -g -pthread -Wall -O2
 #all: task1 run_t1 figs1 doc 
 #all: task2 run_t2 run_t3 figs2 figs3 #doc
 all: main run doc
+
+exp1: exp1.c scatter_gather.o
+	$(CC) $(CFLAGS) scatter_gather.o exp1.c -o exp1
 
 main: main.c scatter_gather.o
 	$(CC) $(CFLAGS) scatter_gather.o main.c -o main

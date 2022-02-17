@@ -7,3 +7,4 @@ figs
 *.log
 *.out
 main
+*.o
