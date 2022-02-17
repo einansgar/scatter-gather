@@ -8,3 +8,7 @@ figs
 *.out
 main
 *.o
+*.fls
+*.fdb_latexmk
+exp1
+data/**
