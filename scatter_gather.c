@@ -49,7 +49,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     _msg.segments = segments;
     _msg.length = length;
 
-    _msg.com = realloc(_msg.com, length);
+    _msg.com = malloc(length);
     // create an area of shared memory and write it to common_data
     int protection = PROT_READ | PROT_WRITE;
     int visibility = MAP_SHARED | MAP_ANONYMOUS;
@@ -76,7 +76,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
 }
 
 int gather(void **exit_data) {
-    int segment_size = _msg.length / _msg.segment;
+    int segment_size = _msg.length / _msg.segments;
 
     if (_msg.segment < _msg.segments - 1) {
         //printf("child ready %d\n", getpid());
@@ -97,7 +97,7 @@ int gather(void **exit_data) {
             return outstanding;
         }
         
-        *exit_data = realloc(*exit_data, _msg.length);
+        *exit_data = malloc(_msg.length);
         memcpy(*exit_data, _msg.com, _msg.length);
         munmap(_msg.com, _msg.length);
         _msg.used = 0;
