@@ -130,14 +130,17 @@ The scatter-gather calls cannot be nested, if scatter is called, gather must fol
 
 Of course, there is a maximum size of memory that can be used in RAM.
 
-On multi-processor systems, the behavior of cache pages might reduce performance when data needs to be copied back again or adjacent memory areas might be synchronized as well out of the interpretation that most users might want to acces these as well. 
+On multi-processor systems, the behavior of cache pages might reduce performance when data needs to be copied back again or adjacent memory areas might be synchronized as well out of the interpretation that most users might want to access these as well. The effects of false sharing might also decrease the execution speed.
 
 \section{Examples}
 
 To demonstrate the functionality of scatter-gather, two computational problems will be executed with different amounts of processes. 
 
-\subsection{a}
-bla.
+\subsection{Arithmetic Operations}
+On each segment of memory, a combination of set, scale, add, scale is executed a hundred times. 
+
+\subsection{Generating Random Numbers}
+The segment of process memory is being filled with random numbers one time.
 
 \bibliographystyle{plain}
 

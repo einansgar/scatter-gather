@@ -6,6 +6,7 @@ figs
 *.aux
 *.log
 *.out
+*.synctex.gz
 main
 *.o
 *.fls
