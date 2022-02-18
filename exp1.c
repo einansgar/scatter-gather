@@ -32,7 +32,7 @@ void run_test(int segments, int size) {
 
     double *proc_mem;
 
-    int segment_no = scatter(init_, segments, (void**)&proc_mem, sizeof(double)*size);
+    int segment_no = scatter(init_, segments, (void**)&proc_mem, size, sizeof(double));
 
 
     if (segment_no == -1) {

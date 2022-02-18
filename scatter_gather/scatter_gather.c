@@ -28,18 +28,26 @@ typedef struct {
     int length; // length of shared memory in bytes
     int segments; // number of parallel processes
     int used; // whether currently scattered
+    int is_leaf;
+    int is_parent;
+    int children;
 } _manage_sg;
 static _manage_sg _msg;
 
 
-int scatter(void *init_data, const int segments, void **proc_data, const int length) {
+int scatter(void *init_data, const int segments, void **proc_data, const int length, const int size_datatype) {
     #if TIMING
     long base = get_time_base();
     long t0 = get_time_mus(base);
     __sync_synchronize();
     #endif
+
+    printf("%d segments on %d length with datatype size %d\n", segments, length, size_datatype);
     if (segments < 1) {
         printf("Segments must be positive.\n");
+        return -1;
+    } else if (segments > length) {
+        printf("Cannot create more segments than length\n");
         return -1;
     }
     if ((length/segments) * segments != length) {
@@ -54,10 +62,10 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
         _msg.used = 1;
     }
 
-    int segment_size = length / segments;
+    int segment_size = size_datatype * length / segments;
 
     _msg.segments = segments;
-    _msg.length = length;
+    _msg.length = length * size_datatype;
 
     #if TIMING
     __sync_synchronize();
@@ -66,7 +74,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     #endif
 
 
-    _msg.com = malloc(length);
+    _msg.com = malloc(_msg.length);
 
     #if TIMING
     __sync_synchronize();
@@ -76,7 +84,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     // create an area of shared memory and write it to common_data
     int protection = PROT_READ | PROT_WRITE;
     int visibility = MAP_SHARED | MAP_ANONYMOUS;
-    _msg.com = mmap(NULL, length, protection, visibility, -1, 0);
+    _msg.com = mmap(NULL, _msg.length, protection, visibility, -1, 0);
 
     #if TIMING
     __sync_synchronize();
@@ -84,7 +92,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     __sync_synchronize();
     #endif
     // copy init_data into the shared memory area
-    memcpy(_msg.com, init_data, length);
+    memcpy(_msg.com, init_data, _msg.length);
 
     #if TIMING
     __sync_synchronize();
@@ -93,32 +101,40 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
     #endif
 
     // create child processes
-    for (int i = 0; i < segments-1; i++) {
-       int pid = fork();
+    int area_start = 0;
+    int area_size = segments;
+    _msg.is_leaf = 1;
+    _msg.is_parent = 1;
+    _msg.children = 0;
+
+    while(area_size > 1) {
+        int pid = fork();
+        //printf("current mem area: %d with size: %d\n", area_start, area_size);
         if (pid == 0) {
-            // assign work to child process
-            *proc_data = _msg.com+i*(segment_size);
-            _msg.segment = i;
-            return i;
-        } else if (pid == -1) {
-            return -1; // error during spawn fork
-        } 
+            // child.
+            //printf("Created another child at layer %d\n", _msg.children);
+            //*proc_data = _msg.com + area_start;
+            // _msg.segment
+            area_size -= area_size/2;
+            _msg.is_parent = 0;
+            _msg.children = 0;
+        } else {
+            // parent.
+            //printf("Still parent at layer %d\n", _msg.children);
+
+            area_start += (area_size+1)/2;
+            area_size /= 2;
+            //*proc_data = _msg.com + area_start;
+            
+            _msg.is_leaf = 0;
+            _msg.children ++;
+            // _msg.segment
+        }
     }
-    // assign work to parent process
-    #if TIMING
-    __sync_synchronize();
-    long t5 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
-    *proc_data = _msg.com + (segments-1)*segment_size;
-    _msg.segment = segments - 1;
-    #if TIMING
-    __sync_synchronize();
-    long t6 = get_time_mus(base);
-    __sync_synchronize();
-    printf("t1: %ld, t2: %ld, t3: %ld, t4: %ld, t5: %ld, t6: %ld\n", t1-t0, t2-t1, t3-t2, t4-t3, t5-t4, t6-t5);
-    #endif
-    return segments - 1;
+    *proc_data = _msg.com + area_start*segment_size;
+    _msg.segment = 0;
+    //printf("Segment created. for mem area %d\n", area_start);
+    return _msg.children;
 }
 
 int gather(void **exit_data) {
@@ -129,34 +145,39 @@ int gather(void **exit_data) {
     #endif
     int segment_size = _msg.length / _msg.segments;
 
-    if (_msg.segment < _msg.segments - 1) {
-        //printf("child ready %d\n", getpid());
-        exit(0); // end the child's existence
-    } else {
-        // wait for all childs to exit
-        #if TIMING
-        __sync_synchronize();
-        long t1 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
-
-        int outstanding = _msg.segments-1;
+    if (_msg.is_leaf && !_msg.is_parent) {
+        //printf("Leaf exits with 0.\n");
+        exit(0); // we can safely exit this one.
+    } else if (!_msg.is_parent) {
+        //printf("Not overall parent.\n");
+        // just wait for the childs to finish and then exit.
         int status;
-        int child;
-
-        #if TIMING
-        __sync_synchronize();
-        long t2 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
-
-        while ((child=waitpid(-1, &status, 0)) > 0) {
+        int unfinished;
+        while ((waitpid(0, &status, 0)) > 0) {
             //printf(" %d finished\n", child);
-            outstanding--;
+            _msg.children--;
+            //_msg.children += unfinished;
         }
-        if (outstanding != 0) {
-            printf("Couldn't collect all childs/too many. Left: %d\n", outstanding);
-            return outstanding;
+        if (_msg.children != 0) {
+            printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
+            exit(0);
+        }
+        //printf("Leaf exits with 0.\n");
+        exit(0);
+    } else {
+        //printf("hold on, the parent's here. Needs to wait for %d childs\n", _msg.children);
+        int status;
+        int unfinished = _msg.children;
+        while ((waitpid(0, &status, 0)) > 0) {
+            //printf(" %d finished\n", child);
+
+            //printf("unfinished = %d\n", unfinished);
+            unfinished --;
+            //_msg.children += unfinished;
+        }
+        if (unfinished != 0) {
+            printf("Couldn't collect all childs/too many left. Left: %d\n", unfinished);
+            return unfinished;
         }
 
         #if TIMING
@@ -189,4 +210,6 @@ int gather(void **exit_data) {
 
         return 0;
     }
+    printf("stranded?\n");
+    return -1;
 }
