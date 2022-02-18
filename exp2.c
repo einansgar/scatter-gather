@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("Called with size=%d file=%s #runs=%d\n", size, filename, runcnt);
+    //printf("Called with size=%d file=%s #runs=%d\n", size, filename, runcnt);
 
 
     
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
         FILE * f = fopen(filename, "a");
         fprintf(f, "%d %ld\n", runs[i], stop-start);
         fclose(f);
-        printf("%d %ld\n", runs[i], stop-start);
+        //printf("%d %ld\n", runs[i], stop-start);
     }
 
     
