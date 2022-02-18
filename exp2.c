@@ -5,23 +5,11 @@
 
 #include "include/scatter_gather.h"
 #include "include/random.h"
+#include "include/timings.h"
 
 #define SIZE 100000
 #define RUNCNT 2
 
-long get_time_base() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec;
-}
-
-long get_time_mus(long basesecond) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    long seconds = tv.tv_sec - basesecond;
-    long microseconds = tv.tv_usec;
-    return seconds * 1000000L + microseconds;
-}
 
 void run_test(int segments, int size) {
     int *init_ = (int*) malloc(size*sizeof(int));

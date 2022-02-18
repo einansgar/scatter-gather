@@ -15,11 +15,11 @@ SIZE ?= 50000
 #all: task2 run_t2 run_t3 figs2 figs3 #doc
 all: main run doc
 
-exp2: exp2.c scatter_gather.o
-	$(CC) $(CFLAGS) scatter_gather.o exp2.c -o exp2
+exp2: exp2.c scatter_gather.o timings.o
+	$(CC) $(CFLAGS) scatter_gather.o timings.o exp2.c -o exp2
 
-exp1: exp1.c scatter_gather.o
-	$(CC) $(CFLAGS) scatter_gather.o exp1.c -o exp1
+exp1: exp1.c scatter_gather.o timings.o
+	$(CC) $(CFLAGS) scatter_gather.o timings.o exp1.c -o exp1
 
 main: main.c scatter_gather.o
 	$(CC) $(CFLAGS) scatter_gather.o main.c -o main
@@ -27,9 +27,11 @@ main: main.c scatter_gather.o
 random: random.c
 	$(CC) $(CFLAGS) random.c -o random
 
-scatter_gather.o: scatter_gather/scatter_gather.c include/scatter_gather.h
+scatter_gather.o: scatter_gather/scatter_gather.c timings.o include/scatter_gather.h
 	$(CC) -c scatter_gather/scatter_gather.c
 
+timings.o: timings.c include/timings.h
+	$(CC) -c timings.c
 
 run: main
 	./main
