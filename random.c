@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <time.h>
-#include "random.h"
+#include "include/random.h"
 
 int main() {
     unsigned int seed = time(NULL);
