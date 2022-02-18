@@ -4,8 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "random.h"
-#include "scatter_gather.h"
+#include "include/scatter_gather.h"
 
 #define SIZE 100000
 #define RUNCNT 2

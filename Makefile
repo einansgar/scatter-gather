@@ -19,8 +19,8 @@ exp1: exp1.c scatter_gather.o
 main: main.c scatter_gather.o
 	$(CC) $(CFLAGS) scatter_gather.o main.c -o main
 
-scatter_gather.o: scatter_gather.c scatter_gather.h
-	$(CC) -c scatter_gather.c
+scatter_gather.o: scatter_gather/scatter_gather.c include/scatter_gather.h
+	$(CC) -c scatter_gather/scatter_gather.c
 
 
 run: main
@@ -35,6 +35,7 @@ doc: $(DOC:.tex=.pdf)
 #run_scatter_gather: scatter_gather
 #    ./scatter_gather
 
+
 %.pdf: %.tex
 	pdflatex $<
 	@egrep -q $(RERUNBIB) $*.log && bibtex $* && pdflatex $<; true
@@ -44,11 +45,12 @@ doc: $(DOC:.tex=.pdf)
 latexmk:
 	-latexmk -pvc -pdf $(DOC)
 
-purge:
-	-rm -f *.{aux,dvi,log,bbl,blg,brf,fls,toc,thm,out,fdb_latexmk}
 
-clean: purge
-	$(MAKE) -C figs $@
-	-rm -f $(DOC:.tex=.pdf)
+clean:
+	rm *.o exp1 main random *.gz *.aux *.log *.out
 
-.PHONY: all figs purge clean
+distclean:
+	rm -f *.o exp1 main random *.gz *.pdf 
+	rm -rf figs
+	rm -rf data
+

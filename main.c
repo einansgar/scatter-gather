@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "scatter_gather.h"
+#include "include/scatter_gather.h"
 
 #define ARRAY_SIZE 60
 #define SEGMENTS 20
