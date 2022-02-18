@@ -1,7 +1,6 @@
 .ignore
 .vscode
 **~
-scatter_gather
 figs
 *.aux
 *.log
