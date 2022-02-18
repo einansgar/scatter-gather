@@ -4,8 +4,8 @@
 
 #include "include/scatter_gather.h"
 
-#define ARRAY_SIZE 100000
-#define SEGMENTS 10000
+#define ARRAY_SIZE 10
+#define SEGMENTS 5
 
 void doubletest() {
     double *init_ = (double*) malloc(ARRAY_SIZE*sizeof(double));
@@ -31,10 +31,10 @@ void doubletest() {
         return;
     }
 
-    //for (int i = 0; i < ARRAY_SIZE; i++) {
-    //    printf("%lf\t", exit_mem[i]);
-    //}
-    //printf("\n");
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        printf("%lf\t", exit_mem[i]);
+    }
+    printf("\n");
     free(exit_mem);
 }
 
