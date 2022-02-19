@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
             printf("skipped run %d - invalid parameters.\n", i);
             continue;
         } else {
-            printf("called %dth time  with %d\n", i, runs[i]);
+            //printf("called %dth time  with %d\n", i, runs[i]);
         }
         long base_time = get_time_base();
         

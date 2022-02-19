@@ -122,7 +122,7 @@ On multi-processor systems, the behavior of cache pages might reduce performance
 To demonstrate the functionality of scatter-gather, two computational problems will be executed with different amounts of processes. The programs will be executed on a Intel\copyright Core\textsuperscript{TM} i7-7500U CPU @ 2.70GHz $\times$ 4. The results on a GPU are expected to be quite different.
 
 \subsection{Arithmetic Operations}
-On each segment of memory, a combination of set, scale, add, scale is executed ten times on an array of size 504000. Each number of processes is tested 40 times.
+On each segment of memory, a combination of set, scale, add, scale is executed ten times on an array of size 504000. Each number of processes is tested 100 times.
 
 \begin{figure}[ht]
     \includegraphics[width=0.8\textwidth]{figs/dump1.pdf}
@@ -131,7 +131,7 @@ On each segment of memory, a combination of set, scale, add, scale is executed t
 \end{figure}
 
 \subsection{Generating Random Numbers}
-The segment of process memory is being filled with random numbers. The operation is executed on an array of size 504000. Each number of processes is tested 40 times.
+The segment of process memory is being filled with random numbers. The operation is executed on an array of size 504000. Each number of processes is tested 100 times.
 
 \begin{figure}[ht]
     \includegraphics[width=0.8\textwidth]{figs/dump2.pdf}
@@ -141,7 +141,7 @@ The segment of process memory is being filled with random numbers. The operation
 
 \section{Conclusions}
 
-Following the structure of the fork calls, multiples of 2 perform better than odd numbers. In the chosen setup, creation of more than ten processes results in even worse performance than a single process, marking out the importance of overhead, especially in the fork calls.
+In the chosen setup, creation of more than 10-20 processes results in even worse performance than a single process, marking out the importance of overhead, especially in the fork calls. Depending on the tasks, execution times can be reduced significantly.
 
 % \bibliographystyle{plain}
 

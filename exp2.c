@@ -16,14 +16,13 @@ void run_test(int segments, int size) {
 
     int *proc_mem;
 
-    int segment_no = scatter(init_, segments, (void**)&proc_mem, size, sizeof(double));
+    int segment_no = scatter(init_, segments, (void**)&proc_mem, size, sizeof(int));
 
 
     if (segment_no == -1) {
         printf("Error in int scatter\n");
         return;
     }
-
     generate(&proc_mem, size/segments, 1);
 
     int *exit_mem;
@@ -99,9 +98,9 @@ int main(int argc, char *argv[]) {
         if (runs[i] == 0 || (size / runs[i]) * runs[i] != size) {
             printf("skipped run %d - invalid parameters.\n", i);
             continue;
-        } else {
-            printf("called %dth time  with %d\n", i, runs[i]);
-        }
+        } //else {
+            //printf("called %dth time  with %d\n", i, runs[i]);
+        //}
         long base_time = get_time_base();
         
         long start = get_time_mus(base_time);
