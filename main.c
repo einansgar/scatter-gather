@@ -4,8 +4,8 @@
 
 #include "include/scatter_gather.h"
 
-#define ARRAY_SIZE 10
-#define SEGMENTS 5
+#define ARRAY_SIZE 100
+#define SEGMENTS 50
 
 void doubletest() {
     double *init_ = (double*) malloc(ARRAY_SIZE*sizeof(double));
@@ -53,36 +53,29 @@ void chartest() {
     char * proc2;
     int ret2 = scatter(proc_, 2, (void**)&proc2, 2, sizeof(char));
 
-    printf("ret2 = %d\n", ret2);
-
+    if (ret2 == -1) {
+        //printf("Error in scatter.\n");
+        //exit(0);
+    }
     proc_[0] = 'x';
     proc_[1] = 'y';
-    //proc2[0] = 'h';
-    //proc2[1] = 'a';
-
+    
     char * exit2;
-    printf("call gather for 2\n");
+    //printf("call gather for 2\n");
     gather((void**)&exit2);
 
 
 
     char * exit_;
 
-    printf("gather #2\n");
-
-    //printf("proc_: %s of segment no %d\n", proc_, segment_no);
-
-    //__sync_synchronize();
+    //printf("gather #2\n");
 
     int ret = gather((void**)&exit_);
 
-    printf("result: %s\n", exit_);
+    printf("result: %s ;) and return value %d\n", exit_, ret);
     printf("result first: %s\n", exit2);
 
-
-    //char * exit2;
-    //int ret2 = gather((void**)&exit2);
-    free(exit_);
+    free(exit2);
 
 }
 
@@ -112,21 +105,17 @@ void inttest() {
 
 
     int ret = gather((void**)&exit_);
-
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        printf("%d\t", exit_[i]);
+    if (ret == 0) {
+        free(exit_);
     }
-
-    printf("\n");
-    free(exit_);
-
 }
-
 
 int main() {
     doubletest();
-    //chartest();
-    //printf("chartest ready\n");
-    //inttest();
+    chartest();
+    printf("chartest ready\n");
+    inttest();
+    printf("inttest ready.\n");
+
     return 0;
 }

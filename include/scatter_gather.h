@@ -23,6 +23,7 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
  *
  *  param exit_data: where to write the resulting data.
  *      Allocates memory dynamically here. Use free().
+ *      But if the call to gather is invalid, memory is not allocated.
  *  Note: You cannot access proc_data after this call.
  *  return: 0 if everything alright, else the number of unfinished processes 
  */

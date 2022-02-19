@@ -1,11 +1,10 @@
 #include <unistd.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
-#include <sys/time.h>
+#include <errno.h>
 
 #include "../include/scatter_gather.h"
 
@@ -23,9 +22,10 @@ typedef struct {
     void * com; // shared memory
     int length; // length of shared memory in bytes
     int segments; // number of parallel processes
-    int used; // whether currently scattered
     int is_root; // indicate whether a process is the one that called scatter
     int children; // number of children the process needs to wait for to exit
+    int used; // whether currently scattered
+    //int curr;
 } _manage_sg;
 static _manage_sg _msg;
 
@@ -34,17 +34,21 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
 
     //printf("%d segments on %d length with datatype size %d\n", segments, length, size_datatype);
     if (segments < 1) {
-        printf("Segments must be positive.\n");
+        //printf("Segments must be positive.\n");
+        errno = EINVAL;
         return -1;
     } else if (segments > length) {
-        printf("Cannot create more segments than length\n");
+        //printf("Cannot create more segments than length\n");
+        errno = EINVAL;
         return -1;
     } else if ((length/segments) * segments != length) {
-        printf("Segments do not match length.\n");
+        //printf("Segments do not match length.\n");
+        errno = EINVAL;
         return -1;
     } else if (_msg.used == 1) {
         // enforce that scatter cannot be called inside scattered processes
-        printf("Scatter called twice.\n");
+        //printf("Scatter called twice.\n");
+        errno = EBUSY;
         return -1;
     }
 
@@ -88,45 +92,59 @@ int scatter(void *init_data, const int segments, void **proc_data, const int len
         }
     }
     *proc_data = _msg.com + area_start*segment_size; // assign some memory area
+    //_msg.curr = area_start;
     return _msg.children;
 }
 
 int gather(void **exit_data) {
-    int segment_size = _msg.length / _msg.segments;
+    if (_msg.segments == 0) {
+        errno = ENOTSUP;
+        return -1;
+    }
+    int segment_size = _msg.length / _msg.segments; // in bytes
+    //printf("Gather segment %d\n", _msg.curr);
 
     if (!_msg.children && !_msg.is_root) {
-        exit(0); // we can safely exit this one.
+        //printf("segment %d finished as leaf.\n", _msg.curr);
+        exit(0); // we can safely exit this one because it's a leaf.
     } else if (!_msg.is_root) {
         // just wait for the childs to finish and then exit.
         int status;
-        int unfinished;
         while ((waitpid(0, &status, 0)) > 0) {
-            _msg.children--;
+            _msg.children = _msg.children + status - 1;
         }
         if (_msg.children != 0) {
-            printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
-            exit(0);
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
+            exit(_msg.children);
         }
+        //printf("segment %d finished as parent.\n", _msg.curr);
         exit(0);
     } else {
-        int status;
-        int unfinished = _msg.children;
-        while ((waitpid(0, &status, 0)) > 0) {
-            unfinished --;
+        if (_msg.used != 1) {
+            //printf("Called scather a second time, abort.\n");
+            return -1;
         }
-        if (unfinished != 0) {
-            printf("Couldn't collect all childs/too many left. Left: %d\n", unfinished);
-            return unfinished;
+        int status;
+        //int unfinished = _msg.children;
+        while ((waitpid(0, &status, 0)) > 0) {
+            //unfinished = unfinished + status - 1;
+            _msg.children = _msg.children + status - 1;
+        }
+        //if (unfinished != 0) {
+        if (_msg.children != 0) {
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", unfinished);
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
+            //return unfinished;
+            errno = ECHILD;
+            return _msg.children;
         }
         
+        // Copy data into result pointer and delete shared memory area.
         *exit_data = malloc(_msg.length);
-
         memcpy(*exit_data, _msg.com, _msg.length);
         munmap(_msg.com, _msg.length);
-        _msg.used = 0;
-
+        
+        _msg.used = 0; // allow scatter
         return 0;
     }
-    printf("stranded?\n");
-    return -1;
 }
