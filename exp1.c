@@ -40,7 +40,7 @@ void run_test(int segments, int size) {
         return;
     }
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
         vector_fill(size/segments, 1, proc_mem);
         vector_scale(size/segments, segment_no, proc_mem);
         vector_add(size/segments, 0.5, proc_mem);

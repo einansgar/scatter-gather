@@ -47,7 +47,7 @@
 %2. Student names and corresponding Email addresses. If many separate 
 %---------------------------------------------------------
 \title{Operating Systems - Assignment 2}
-\author{Ansgar Lemke (ansgar.lemke@stud-mail.uni-wuerzburg.de, ens21ale)}
+\author{Ansgar Lemke (ens21ale)}
 \date{} %<-- LEAVE EMPTY! 
 \begin{titlepage}
 \maketitle 
@@ -71,6 +71,8 @@ This approach uses shared memory and processes to implement the functionality.
 %	What are the main results?
 Depending on the size of memory, used devices and the computational load of the tasks, there is an optimal number of processes to use.
 
+The source code of this project as well as this report can be found at \href{https://github.com/einansgar/scatter-gather}{https://github.com/einansgar/scatter-gather}.
+
 \end{abstract}
 
 \end{titlepage}
@@ -92,42 +94,20 @@ The library is implemented in C99 which makes it available to many applications.
 
 Each process is assigned to a segment which corresponds to a certain area of the shared memory. The highest segment is assigned to the parent process. This information can be used to exit all other processes in the end to continue on the parent only. 
 
-One goal is to provide an interface to the user which grants full functionality while being relatively safe by hiding parts that are not relevant for end users. There are two functions available to be used by the user:
+One goal is to provide an interface to the user which grants full functionality while being relatively safe by hiding parts that are not relevant for end users. To transmit data from scatter to gather, a static struct is used internally. There are two functions available to be used by the user:
 
 \begin{itemize}
-    \item {scatter takes the data where the processes should work on (init\_data), the number of processes (segments) to create, a pointer to the memory for each process (proc\_data) and the length of the whole data in bytes. It returns the number of children of each process or -1 in case of error. It is highly recommended to check for the return value to proceed, more information might be found at errno. \\
-    scatter creates an area of shared memory and copies init\_data into this area. Then, child processes will be created recursively until there are as many as wanted by the user. Each of them will be assigned a location in shared memory to work on. }
-    \item {gather takes only one argument, a pointer where to write the combined work of the processes (exit\_data). If gather works fine, it returns 0, otherwise the number of processes that have not finished from what reason ever. For example, when gather is called a second time. \\
-    Processes without children can exit immidiatly while those with children need to wait for them to exit. The root process will not exit but return in the end.}
+    \item {scatter takes initialization data and parameters and provides a pointer to a location in shared memory for each process to work on. }
+    \item {gather ends processes as soon as all of their children have died, except for the root process which has called scatter once. This one is provided with a copy of the shared memory after all the other processes have finished.}
 \end{itemize}
 
-To transmit data from scatter to gather, internally a static struct is used. It contains the following values
-
-\begin{itemize}
-    \item com - the shared memory
-    \item length - size of shared memory in bytes
-    \item segments - number of parallel processes
-    \item is\_root - whether this is the process that the user has created
-    \item children - number of children of the current process
-    \item used - a state variable to prevent nested scatter/gather calls
-\end{itemize}
-
-This might not be the optimal solution but a smaller number of state variables might lead to more programming mistakes.
-
-The above mentioned pointer to the memory for each process points to a location inside the shared memory so some memcpy calls can be avoided. In the end of gather, the content of the shared memory is being copied back to exit\_data so that no shared memory exists after gather has finished. 
+Between scatter and gather, multiple processes exist to compute tasks in parallel.
 
 \subsection{Assumptions}
 
 The spawned processes must only work on their own memory section, proc\_memory. They must not change the location of the pointer because then their changes will not be written back. They must strictly remain inside their memory area, otherwise they would write either on memory of another process or even to an invalid location outside the shared memory area.  
 
-init\_data must always be initialized while the other pointers should not, but may be as well (causing memory leaks).
-
-It is assumed that all processes take nearly the same amount of time, otherwise, the waiting might take up to the time the slowest process needs to finish plus the time to exit the others.
-
-It is assumed that processes do enough work to justify the overhead by process creation and destruction.
-
-The user must check for return values because pointers might be invalid in case of error. This leads to segmentation faults and should be avoided.
-
+It is assumed that all processes take nearly the same amount of time, otherwise, the waiting might take up to the time the slowest process needs to finish plus the time to exit the others. In addition, is assumed that processes do enough work to justify the overhead by process creation and destruction.
 
 \subsection{Limitations}
 
@@ -135,28 +115,42 @@ The amount of available data types is restricted to the basic C types which do n
 
 The scatter-gather calls cannot be nested, if scatter is called, gather must follow exactly one time. This greatly simplifies the structure because a lot of the functionality can be hidden from the user. 
 
-Of course, there is a maximum size of memory that can be used in RAM.
-
-On multi-processor systems, the behavior of cache pages might reduce performance when data needs to be copied back again or adjacent memory areas might be synchronized as well out of the interpretation that most users might want to access these as well. The effects of false sharing might also decrease the execution speed.
+On multi-processor systems, the behavior of cache pages might reduce performance when data needs to be copied back again or adjacent memory areas might be synchronized as well out of the interpretation that most users might want to access these as well. The effects of false sharing might also decrease the execution speed. And of course, there is a maximum size of memory that can be used in RAM.
 
 \section{Examples}
 
-To demonstrate the functionality of scatter-gather, two computational problems will be executed with different amounts of processes. 
+To demonstrate the functionality of scatter-gather, two computational problems will be executed with different amounts of processes. The programs will be executed on a Intel\copyright Core\textsuperscript{TM} i7-7500U CPU @ 2.70GHz $\times$ 4. The results on a GPU are expected to be quite different.
 
 \subsection{Arithmetic Operations}
-On each segment of memory, a combination of set, scale, add, scale is executed a hundred times. 
+On each segment of memory, a combination of set, scale, add, scale is executed ten times on an array of size 504000. Each number of processes is tested 40 times.
+
+\begin{figure}[ht]
+    \includegraphics[width=0.8\textwidth]{figs/dump1.pdf}
+    \caption{Execution times on arithmetic operations}
+    \label{fig:dump1}
+\end{figure}
 
 \subsection{Generating Random Numbers}
-The segment of process memory is being filled with random numbers one time.
+The segment of process memory is being filled with random numbers. The operation is executed on an array of size 504000. Each number of processes is tested 40 times.
 
-\bibliographystyle{plain}
+\begin{figure}[ht]
+    \includegraphics[width=0.8\textwidth]{figs/dump2.pdf}
+    \caption{Execution times on generating random numbers}
+    \label{fig:dump2}
+\end{figure}
 
-\begin{thebibliography}{99}
-	\bibitem{sched_plot_thickens} Corbet, Jonathan, Schedulers: The Plot Thickens, LWN.net, (April 2007, \href{https://lwn.net/Articles/230574/}{https://lwn.net/Articles/230574/}).
-	\bibitem{mp_sched} sched(7) Linux User's Manual, Edition 5.3, (February 2022).
-    \bibitem{async} oxnz: Linux Asynchronous I/O (October 13 2016, https://oxnz.github.io/2016/10/13/linux-aio/).
-    \bibitem{nocache} open(2) Linux User's Manual, Edition 5.13, (February 2022).
-    \bibitem{iosched} colin-king et al: IOSchedulers ubuntu wiki (September 2019, https://wiki.ubuntu.com/Kernel/Reference/IOSchedulers).
-\end{thebibliography}
+\section{Conclusions}
+
+Following the structure of the fork calls, multiples of 2 perform better than odd numbers. In the chosen setup, creation of more than ten processes results in even worse performance than a single process, marking out the importance of overhead, especially in the fork calls.
+
+% \bibliographystyle{plain}
+
+% \begin{thebibliography}{99}
+% 	\bibitem{sched_plot_thickens} Corbet, Jonathan, Schedulers: The Plot Thickens, LWN.net, (April 2007, \href{https://lwn.net/Articles/230574/}{https://lwn.net/Articles/230574/}).
+% 	\bibitem{mp_sched} sched(7) Linux User's Manual, Edition 5.3, (February 2022).
+%     \bibitem{async} oxnz: Linux Asynchronous I/O (October 13 2016, https://oxnz.github.io/2016/10/13/linux-aio/).
+%     \bibitem{nocache} open(2) Linux User's Manual, Edition 5.13, (February 2022).
+%     \bibitem{iosched} colin-king et al: IOSchedulers ubuntu wiki (September 2019, https://wiki.ubuntu.com/Kernel/Reference/IOSchedulers).
+% \end{thebibliography}
 
 \end{document}

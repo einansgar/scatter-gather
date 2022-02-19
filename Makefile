@@ -8,7 +8,8 @@ CFLAGS ?= -g -Wall -O2 --std=c99
 CXX ?= c++
 CXXFLAGS ?= -g -pthread -Wall -O2
 
-SIZE ?= 50000
+# size can be divided by any number until 17. 
+SIZE ?= 504000
 
 
 #all: task1 run_t1 figs1 doc 
@@ -41,12 +42,12 @@ run: main
 
 run_exp1: exp1
 	for number in 1 2 3 4 5 6 7 8 9 0 11 12 13 14 15 16 17 18 19 20 ; do \
-		./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40 ; \
+		./exp1 s $(SIZE) f data/dump1.txt r 1 2 3 4 5 6 7 8 9 10 12 14 16 18 20 30 40 ; \
 	done
 
 run_exp2: exp2
 	for number in 1 2 3 4 5 6 7 8 9 0 11 12 13 14 15 16 17 18 19 20 ; do \
-		./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40 ; \
+		./exp2 s $(SIZE) f data/dump2.txt r 1 2 3 4 5 6 7 8 9 10 12 14 16 18 20 30 40 ; \
 	done
 
 figs: run_exp1 run_exp2

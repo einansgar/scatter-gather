@@ -1,7 +1,6 @@
 .ignore
 .vscode
 **~
-figs
 *.aux
 *.log
 *.out
@@ -11,4 +10,6 @@ main
 *.fls
 *.fdb_latexmk
 exp1
+exp2
 data/**
+**/__pycache__
