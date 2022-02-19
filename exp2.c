@@ -16,7 +16,7 @@ void run_test(int segments, int size) {
 
     int *proc_mem;
 
-    int segment_no = scatter(init_, segments, (void**)&proc_mem, sizeof(double)*size);
+    int segment_no = scatter(init_, segments, (void**)&proc_mem, size, sizeof(double));
 
 
     if (segment_no == -1) {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("Called with size=%d file=%s #runs=%d\n", size, filename, runcnt);
+    //printf("Called with size=%d file=%s #runs=%d\n", size, filename, runcnt);
 
 
     
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
         FILE * f = fopen(filename, "a");
         fprintf(f, "%d %ld\n", runs[i], stop-start);
         fclose(f);
-        printf("%d %ld\n", runs[i], stop-start);
+        //printf("%d %ld\n", runs[i], stop-start);
     }
 
     

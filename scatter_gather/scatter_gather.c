@@ -1,16 +1,12 @@
 #include <unistd.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
-#include <sys/time.h>
+#include <errno.h>
 
 #include "../include/scatter_gather.h"
-#include "../include/timings.h"
-
-#define TIMING 0
 
 // this one should be defined by sys/mman.h but vs code does not find it
 #ifndef MAP_ANONYMOUS
@@ -24,169 +20,131 @@
 // make this inaccessible to the user to increase security.
 typedef struct {
     void * com; // shared memory
-    int segment; // segment number of the process
     int length; // length of shared memory in bytes
     int segments; // number of parallel processes
+    int is_root; // indicate whether a process is the one that called scatter
+    int children; // number of children the process needs to wait for to exit
     int used; // whether currently scattered
+    //int curr;
 } _manage_sg;
 static _manage_sg _msg;
 
 
-int scatter(void *init_data, const int segments, void **proc_data, const int length) {
-    #if TIMING
-    long base = get_time_base();
-    long t0 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
+int scatter(void *init_data, const int segments, void **proc_data, const int length, const int size_datatype) {
+
+    //printf("%d segments on %d length with datatype size %d\n", segments, length, size_datatype);
     if (segments < 1) {
-        printf("Segments must be positive.\n");
+        //printf("Segments must be positive.\n");
+        errno = EINVAL;
+        return -1;
+    } else if (segments > length) {
+        //printf("Cannot create more segments than length\n");
+        errno = EINVAL;
+        return -1;
+    } else if ((length/segments) * segments != length) {
+        //printf("Segments do not match length.\n");
+        errno = EINVAL;
+        return -1;
+    } else if (_msg.used == 1) {
+        // enforce that scatter cannot be called inside scattered processes
+        //printf("Scatter called twice.\n");
+        errno = EBUSY;
         return -1;
     }
-    if ((length/segments) * segments != length) {
-        printf("Segments do not match length.\n");
-    }
 
-    // enforce that scatter cannot be called inside scattered processes
-    if (_msg.used == 1) {
-        printf("Scatter called twice.\n");
-        return -1;
-    } else {
-        _msg.used = 1;
-    }
-
-    int segment_size = length / segments;
-
+    // assume that we do not have multithreading issues until now.
+    _msg.used = 1; 
+    // copy arguments into hidden memory
     _msg.segments = segments;
-    _msg.length = length;
-
-    #if TIMING
-    __sync_synchronize();
-    long t1 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
+    _msg.length = length * size_datatype;
+    // the size each segment should use
+    int segment_size = size_datatype * length / segments;
 
 
-    _msg.com = malloc(length);
-
-    #if TIMING
-    __sync_synchronize();
-    long t2 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
-    // create an area of shared memory and write it to common_data
+    // create an area of shared memory
+    _msg.com = malloc(_msg.length);
     int protection = PROT_READ | PROT_WRITE;
     int visibility = MAP_SHARED | MAP_ANONYMOUS;
-    _msg.com = mmap(NULL, length, protection, visibility, -1, 0);
-
-    #if TIMING
-    __sync_synchronize();
-    long t3 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
+    _msg.com = mmap(NULL, _msg.length, protection, visibility, -1, 0);
     // copy init_data into the shared memory area
-    memcpy(_msg.com, init_data, length);
-
-    #if TIMING
-    __sync_synchronize();
-    long t4 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
+    memcpy(_msg.com, init_data, _msg.length);
 
     // create child processes
-    for (int i = 0; i < segments-1; i++) {
-       int pid = fork();
+    int area_start = 0; // measured in segment_size
+    int area_size = segments; // measured in segment_size
+    _msg.is_root = 1; // until now, no fork has happened
+    _msg.children = 0; // until now, no children have been created
+
+    // Now, create child processes recursively until the whole area has been
+    // distributed among them.
+    while(area_size > 1) {
+        int pid = fork();
         if (pid == 0) {
-            // assign work to child process
-            *proc_data = _msg.com+i*(segment_size);
-            _msg.segment = i;
-            return i;
-        } else if (pid == -1) {
-            return -1; // error during spawn fork
-        } 
+            // Child. Gets the bigger half because it is often executed first
+            area_size -= area_size/2;
+            _msg.is_root = 0; // definitely not.
+            _msg.children = 0; // not yet, so reset the counter.
+        } else {
+            // Parent. Gets the remaining memory.
+            area_start += (area_size+1)/2;
+            area_size /= 2;
+            _msg.children ++;
+        }
     }
-    // assign work to parent process
-    #if TIMING
-    __sync_synchronize();
-    long t5 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
-    *proc_data = _msg.com + (segments-1)*segment_size;
-    _msg.segment = segments - 1;
-    #if TIMING
-    __sync_synchronize();
-    long t6 = get_time_mus(base);
-    __sync_synchronize();
-    printf("t1: %ld, t2: %ld, t3: %ld, t4: %ld, t5: %ld, t6: %ld\n", t1-t0, t2-t1, t3-t2, t4-t3, t5-t4, t6-t5);
-    #endif
-    return segments - 1;
+    *proc_data = _msg.com + area_start*segment_size; // assign some memory area
+    //_msg.curr = area_start;
+    return _msg.children;
 }
 
 int gather(void **exit_data) {
-    #if TIMING
-    long base = get_time_base();
-    long t0 = get_time_mus(base);
-    __sync_synchronize();
-    #endif
-    int segment_size = _msg.length / _msg.segments;
+    if (_msg.segments == 0) {
+        errno = ENOTSUP;
+        return -1;
+    }
+    int segment_size = _msg.length / _msg.segments; // in bytes
+    //printf("Gather segment %d\n", _msg.curr);
 
-    if (_msg.segment < _msg.segments - 1) {
-        //printf("child ready %d\n", getpid());
-        exit(0); // end the child's existence
-    } else {
-        // wait for all childs to exit
-        #if TIMING
-        __sync_synchronize();
-        long t1 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
-
-        int outstanding = _msg.segments-1;
+    if (!_msg.children && !_msg.is_root) {
+        //printf("segment %d finished as leaf.\n", _msg.curr);
+        exit(0); // we can safely exit this one because it's a leaf.
+    } else if (!_msg.is_root) {
+        // just wait for the childs to finish and then exit.
         int status;
-        int child;
-
-        #if TIMING
-        __sync_synchronize();
-        long t2 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
-
-        while ((child=waitpid(-1, &status, 0)) > 0) {
-            //printf(" %d finished\n", child);
-            outstanding--;
+        while ((waitpid(0, &status, 0)) > 0) {
+            _msg.children = _msg.children + status - 1;
         }
-        if (outstanding != 0) {
-            printf("Couldn't collect all childs/too many. Left: %d\n", outstanding);
-            return outstanding;
+        if (_msg.children != 0) {
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
+            exit(_msg.children);
         }
-
-        #if TIMING
-        __sync_synchronize();
-        long t3 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
+        //printf("segment %d finished as parent.\n", _msg.curr);
+        exit(0);
+    } else {
+        if (_msg.used != 1) {
+            //printf("Called scather a second time, abort.\n");
+            return -1;
+        }
+        int status;
+        //int unfinished = _msg.children;
+        while ((waitpid(0, &status, 0)) > 0) {
+            //unfinished = unfinished + status - 1;
+            _msg.children = _msg.children + status - 1;
+        }
+        //if (unfinished != 0) {
+        if (_msg.children != 0) {
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", unfinished);
+            //printf("Couldn't collect all childs/too many left. Left: %d\n", _msg.children);
+            //return unfinished;
+            errno = ECHILD;
+            return _msg.children;
+        }
         
+        // Copy data into result pointer and delete shared memory area.
         *exit_data = malloc(_msg.length);
-
-        #if TIMING
-        __sync_synchronize();
-        long t4 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
         memcpy(*exit_data, _msg.com, _msg.length);
-        #if TIMING
-        __sync_synchronize();
-        long t5 = get_time_mus(base);
-        __sync_synchronize();
-        #endif
         munmap(_msg.com, _msg.length);
-        _msg.used = 0;
-        #if TIMING
-        __sync_synchronize();
-        long t6 = get_time_mus(base);
-        __sync_synchronize();
-        printf("t1: %ld, t2: %ld, t3: %ld, t4: %ld, t5: %ld, t6: %ld\n", t1-t0, t2-t1, t3-t2, t4-t3, t5-t4, t6-t5);
-        #endif
-
+        
+        _msg.used = 0; // allow scatter
         return 0;
     }
 }

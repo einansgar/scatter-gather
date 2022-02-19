@@ -40,41 +40,14 @@ run: main
 #	python3 ./plot1.py
 
 run_exp1: exp1
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40
+	for number in 1 2 3 4 5 6 7 8 9 0 11 12 13 14 15 16 17 18 19 20 ; do \
+		./exp1 s $(SIZE) f data/dump1.txt r 1 2 4 5 8 10 16 20 25 40 ; \
+	done
 
 run_exp2: exp2
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-	./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40
-
+	for number in 1 2 3 4 5 6 7 8 9 0 11 12 13 14 15 16 17 18 19 20 ; do \
+		./exp2 s $(SIZE) f data/dump2.txt r 1 2 4 5 8 10 16 20 25 40 ; \
+	done
 
 figs: run_exp1 run_exp2
 	python3 scripts/plot_dump.py `pwd`/data/dump1.txt `pwd`/figs/dump1.pdf
