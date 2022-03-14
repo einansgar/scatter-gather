@@ -139,6 +139,12 @@ The segment of process memory is being filled with random numbers. The operation
     \label{fig:dump2}
 \end{figure}
 
+\subsection{Discussion}
+While execution times decrease when using up to eight processes, the performance gets worse with more processes. Each fork introduces extra overhead. At some point, depending on the amount of work inside the forked processes, this overhead is greater than the gains from parallelization. In addition, the ressources for parallelization are constrained. Processor utilization reaches 100\% even with a small amount of parallel processes. 
+
+As a consequence, the number of parallel processes should not be higher than neccessary. In the presented measurements the number should be between 2 and 16 with an optimum at 4 or 6. 
+
+
 \section{Conclusions}
 
 In the chosen setup, creation of more than 10-20 processes results in even worse performance than a single process, marking out the importance of overhead, especially in the fork calls. Depending on the tasks, execution times can be reduced significantly.
